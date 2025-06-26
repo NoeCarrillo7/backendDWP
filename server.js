@@ -39,3 +39,10 @@ app.use(function (err, req, res, next) {
     res.status(err.statusCode).send(err.message);
     
 })
+
+
+app.use((err, req, res, next) => {
+  console.error(err);                       // log interno
+  res.status(err.status || 500)
+     .json({ message: err.message });       // respuesta al cliente
+});
