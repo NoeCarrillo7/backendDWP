@@ -2,20 +2,18 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const createError = require('http-errors'); // Asegúrate de que esté instalado
+const createError = require('http-errors');
 
-// Conexión a MongoDB
+// Conexión con la BD
 mongoose
-    .connect('mongodb+srv://noeclti22:6Kcab3QG1IdCWIXu@cluster0.gew1ptp.mongodb.net/empleados?retryWrites=true&w=majority&appName=Cluster0')
-    .then((x) => {
-        console.log(`Conectado a MongoDB: "${x.connections[0].name}"`);
+    //.connect('mongodb://127.0.0.1:27017/empleados')
+    .connect('mongodb+srv://noeclti22:6Kcab3QG1IdCWIXu@cluster0.gew1ptp.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
+    .then((x) =>{
+        console.log(`Conectado exitosamente a la BD: "${x.connections[0].name}"`);
     })
-    .catch((err) => {
-        console.error('Error al conectar a MongoDB:', err);
-    });
 
-// Rutas
-const empleadosRutas = require('./routes/empleado.routes');
+    .catch((error) =>{
+    console.error('Error al conectarse a Mongo:', error); })
 
 const app = express();
 
@@ -24,23 +22,36 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cors());
 
-// Ruta base para API
-app.use('/api', empleadosRutas);
+// Ruta raíz para health checks
+app.get('/', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK',
+    message: 'API de Empleados funcionando',
+    timestamp: new Date().toISOString()
+  });
+});
 
-// ---------- Rutas inexistentes ----------
+// Rutas API
+const empleadoRutas = require('./routes/empleado.routes');
+app.use('/api', empleadoRutas);
+
+// Manejador de error 404
 app.use((req, res, next) => {
-    next(createError(404, 'Recurso no encontrado'));
+  console.log(`Ruta no encontrada: ${req.method} ${req.path}`);
+  next(createError(404, 'Ruta no encontrada'));
 });
 
-// ---------- Manejador de errores ----------
+// Manejador de errores general
 app.use((err, req, res, next) => {
-    console.error(err.message);
-    res.status(err.status || err.statusCode || 500)
-       .json({ message: err.message });
+  console.error('Error:', err.message);
+  res.status(err.status || 500).json({ 
+    error: err.message,
+    status: err.status || 500
+  });
 });
 
-// Puerto
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-    console.log(`Servidor corriendo en el puerto ${PORT}`);
+// Iniciar servidor
+const port = process.env.PORT || 4000;
+app.listen(port, () => {
+  console.log(`Servidor escuchando en puerto ${port}`);
 });
