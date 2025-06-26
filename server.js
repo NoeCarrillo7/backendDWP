@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const createError = require('http-errors');  
 
 mongoose
     //.connect('mongodb://127.0.0.1:27017/empleados')
@@ -23,6 +24,19 @@ app.use(
 );
 app.use(cors());
 app.use('/api', empleadosRutas);
+
+// ---------- Rutas inexistentes ----------
+app.use((req, res, next) => {
+  next(createError(404, 'Recurso no encontrado'));
+});
+
+// ---------- Manejador de errores ----------
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(err.status || err.statusCode || 500)
+     .json({ message: err.message });
+});
+
 const PORT = process.env.PORT || 4000;
 const server =app.listen(PORT, () => {
     console.log(`Servidor corriendo en el puerto ${PORT}`);
@@ -41,8 +55,4 @@ app.use(function (err, req, res, next) {
 })
 
 
-app.use((err, req, res, next) => {
-  console.error(err);                       // log interno
-  res.status(err.status || 500)
-     .json({ message: err.message });       // respuesta al cliente
-});
+
